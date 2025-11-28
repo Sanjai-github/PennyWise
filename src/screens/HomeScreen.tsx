@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useAccountStore } from '../store/useAccountStore';
 import { useTransactionStore } from '../store/useTransactionStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 import { Card, Button } from '../components';
 import TransactionItem from '../components/TransactionItem';
 import QuickAddModal from './QuickAddModal';
@@ -13,8 +14,9 @@ interface HomeScreenProps {
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
-  const { accounts, loadAccounts, isLoading: accountsLoading } = useAccountStore();
+  const { accounts, loadAccounts, recalculateBalance, isLoading: accountsLoading } = useAccountStore();
   const { transactions, loadTransactions, isLoading: transactionsLoading } = useTransactionStore();
+  const { currencySymbol } = useSettingsStore();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -24,16 +26,39 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
   useEffect(() => {
     loadAccounts();
     loadTransactions();
+    recalculateBalance(); // Ensure balance is in sync
   }, []);
 
   const onRefresh = React.useCallback(() => {
     loadAccounts();
     loadTransactions();
+    recalculateBalance();
   }, []);
 
   const totalBalance = useMemo(() => {
     return accounts.reduce((sum, acc) => sum + acc.balance, 0);
   }, [accounts]);
+
+  const { totalIncome, totalExpense } = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    return transactions.reduce(
+      (acc, tx) => {
+        const txDate = new Date(tx.date);
+        if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
+          if (tx.type === 'income') {
+            acc.totalIncome += tx.amount;
+          } else {
+            acc.totalExpense += tx.amount;
+          }
+        }
+        return acc;
+      },
+      { totalIncome: 0, totalExpense: 0 }
+    );
+  }, [transactions]);
 
   const recentTransactions = useMemo(() => {
     return transactions.slice(0, 5);
@@ -79,33 +104,33 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
 
           {/* Balance Card */}
           <View className="bg-light-primary dark:bg-dark-primary rounded-3xl p-6 shadow-lg">
-            <Text className="text-dark-text/70 text-sm font-medium mb-1">
+            <Text className="text-light-text/70 dark:text-dark-text/70 text-sm font-medium mb-1">
               Total Balance
             </Text>
             <Text
-              className="text-dark-text text-4xl font-bold mb-6"
+              className="text-light-text dark:text-dark-text text-4xl font-bold mb-6"
               style={{ fontFamily: 'Outfit_700Bold' }}
             >
-              ${totalBalance.toFixed(2)}
+              {currencySymbol}{totalBalance.toFixed(2)}
             </Text>
 
             <View className="flex-row gap-4">
               <View className="flex-1 bg-white/20 rounded-xl p-3 flex-row items-center gap-3">
                 <View className="w-8 h-8 rounded-full bg-white/30 items-center justify-center">
-                  <TrendingUp size={16} color="#FFF" />
+                  <TrendingUp size={16} color={isDark ? '#FFF' : '#2C2C2C'} />
                 </View>
                 <View>
-                  <Text className="text-white/70 text-xs">Income</Text>
-                  <Text className="text-white font-bold text-sm">$0.00</Text>
+                  <Text className="text-light-text/70 dark:text-dark-text/70 text-xs">Income</Text>
+                  <Text className="text-light-text dark:text-dark-text font-bold text-sm">{currencySymbol}{totalIncome.toFixed(2)}</Text>
                 </View>
               </View>
               <View className="flex-1 bg-white/20 rounded-xl p-3 flex-row items-center gap-3">
                 <View className="w-8 h-8 rounded-full bg-white/30 items-center justify-center">
-                  <TrendingDown size={16} color="#FFF" />
+                  <TrendingDown size={16} color={isDark ? '#FFF' : '#2C2C2C'} />
                 </View>
                 <View>
-                  <Text className="text-white/70 text-xs">Expense</Text>
-                  <Text className="text-white font-bold text-sm">$0.00</Text>
+                  <Text className="text-light-text/70 dark:text-dark-text/70 text-xs">Expense</Text>
+                  <Text className="text-light-text dark:text-dark-text font-bold text-sm">{currencySymbol}{totalExpense.toFixed(2)}</Text>
                 </View>
               </View>
             </View>

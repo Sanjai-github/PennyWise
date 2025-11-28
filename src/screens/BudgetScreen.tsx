@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-
 import { useTransactionStore } from '../store/useTransactionStore';
 import { useBudgetStore } from '../store/useBudgetStore';
 import { useCategoryStore } from '../store/useCategoryStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 import ProgressBar from '../components/ProgressBar';
 import SetBudgetModal from './SetBudgetModal';
 import { Plus, AlertCircle } from 'lucide-react-native';
@@ -13,6 +14,7 @@ const BudgetScreen = () => {
   const { transactions } = useTransactionStore();
   const { budgets, loadBudgets } = useBudgetStore();
   const { categories, loadCategories } = useCategoryStore();
+  const { currencySymbol } = useSettingsStore();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -120,7 +122,7 @@ const BudgetScreen = () => {
                     </Text>
                     {item.hasBudget ? (
                       <Text className="text-light-text-secondary dark:text-dark-text-secondary text-xs">
-                        ${item.spent.toFixed(0)} of ${item.limit.toFixed(0)}
+                        {currencySymbol}{item.spent.toFixed(0)} of {currencySymbol}{item.limit.toFixed(0)}
                       </Text>
                     ) : (
                       <Text className="text-light-text-secondary dark:text-dark-text-secondary text-xs italic">
@@ -146,7 +148,7 @@ const BudgetScreen = () => {
                       {(item.progress * 100).toFixed(0)}%
                     </Text>
                     <Text className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-                      ${(item.limit - item.spent).toFixed(0)} left
+                      {currencySymbol}{(item.limit - item.spent).toFixed(0)} left
                     </Text>
                   </View>
                 </View>

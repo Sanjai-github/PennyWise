@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SectionList, Alert } from 'react-native';
 import { useTransactionStore } from '../store/useTransactionStore';
+import { useAccountStore } from '../store/useAccountStore';
 import TransactionItem from '../components/TransactionItem';
 import EditTransactionModal from './EditTransactionModal';
 import { Search, Filter, X } from 'lucide-react-native';
@@ -94,7 +95,10 @@ const HistoryScreen = () => {
                 {
                   text: 'Delete',
                   style: 'destructive',
-                  onPress: () => deleteTransaction(transaction.id),
+                  onPress: async () => {
+                    await deleteTransaction(transaction.id);
+                    useAccountStore.getState().loadAccounts();
+                  },
                 },
               ]
             );

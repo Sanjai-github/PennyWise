@@ -4,6 +4,7 @@ import Modal from '../components/Modal';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import { useBudgetStore } from '../store/useBudgetStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 
 interface SetBudgetModalProps {
   visible: boolean;
@@ -15,6 +16,7 @@ interface SetBudgetModalProps {
 const SetBudgetModal: React.FC<SetBudgetModalProps> = ({ visible, onClose, category, currentLimit }) => {
   const [amount, setAmount] = useState('');
   const { setBudget, isLoading } = useBudgetStore();
+  const { currencySymbol } = useSettingsStore();
 
   useEffect(() => {
     if (visible && currentLimit) {
@@ -51,9 +53,9 @@ const SetBudgetModal: React.FC<SetBudgetModalProps> = ({ visible, onClose, categ
     >
       <View className="gap-6 pb-6">
         <View>
-          <Text className="text-light-text dark:text-dark-text font-medium mb-2">Monthly Limit</Text>
+          <Text className="text-light-text dark:text-dark-text font-medium mb-2">Monthly Limit ({currencySymbol})</Text>
           <Input
-            placeholder="0.00"
+            placeholder={`${currencySymbol}0.00`}
             value={amount}
             onChangeText={setAmount}
             keyboardType="numeric"

@@ -2,10 +2,12 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, Dimensions } from 'react-native';
 import { PieChart, BarChart } from 'react-native-gifted-charts';
 import { useTransactionStore } from '../store/useTransactionStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 import { useColorScheme } from 'nativewind';
 
 const AnalyticsScreen = () => {
   const { transactions } = useTransactionStore();
+  const { currencySymbol } = useSettingsStore();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const screenWidth = Dimensions.get('window').width;
@@ -102,7 +104,7 @@ const AnalyticsScreen = () => {
                   <View className="justify-center items-center">
                     <Text className="text-xs text-gray-500">Total</Text>
                     <Text className="text-lg font-bold text-light-text dark:text-dark-text">
-                      ${totalExpense.toFixed(0)}
+                      {currencySymbol}{totalExpense.toFixed(0)}
                     </Text>
                   </View>
                 );

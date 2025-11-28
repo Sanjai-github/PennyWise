@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { db } from '../db/client';
-import { transactions, Transaction, NewTransaction } from '../db/schema';
+import { transactions, Transaction, NewTransaction, accounts } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 
 interface TransactionState {
@@ -32,7 +32,23 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   addTransaction: async (newTransaction) => {
     set({ isLoading: true, error: null });
     try {
-      await db.insert(transactions).values(newTransaction);
+      await db.transaction(async (tx) => {
+        // 1. Insert Transaction
+        await tx.insert(transactions).values(newTransaction);
+
+        // 2. Update Account Balance
+        const account = await tx.select().from(accounts).where(eq(accounts.id, newTransaction.accountId)).get();
+        if (account) {
+          const newBalance = newTransaction.type === 'income' 
+            ? account.balance + newTransaction.amount 
+            : account.balance - newTransaction.amount;
+          
+          await tx.update(accounts)
+            .set({ balance: newBalance })
+            .where(eq(accounts.id, newTransaction.accountId));
+        }
+      });
+
       const allTransactions = await db.select().from(transactions).orderBy(desc(transactions.date));
       set({ transactions: allTransactions, isLoading: false });
     } catch (error) {
@@ -44,7 +60,27 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   deleteTransaction: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      await db.delete(transactions).where(eq(transactions.id, id));
+      await db.transaction(async (tx) => {
+        // 1. Get transaction details before deleting
+        const transaction = await tx.select().from(transactions).where(eq(transactions.id, id)).get();
+        if (!transaction) return;
+
+        // 2. Revert Account Balance
+        const account = await tx.select().from(accounts).where(eq(accounts.id, transaction.accountId)).get();
+        if (account) {
+          const newBalance = transaction.type === 'income'
+            ? account.balance - transaction.amount
+            : account.balance + transaction.amount;
+
+          await tx.update(accounts)
+            .set({ balance: newBalance })
+            .where(eq(accounts.id, transaction.accountId));
+        }
+
+        // 3. Delete Transaction
+        await tx.delete(transactions).where(eq(transactions.id, id));
+      });
+
       const allTransactions = await db.select().from(transactions).orderBy(desc(transactions.date));
       set({ transactions: allTransactions, isLoading: false });
     } catch (error) {
@@ -56,7 +92,38 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   updateTransaction: async (id: number, data: Partial<NewTransaction>) => {
     set({ isLoading: true, error: null });
     try {
-      await db.update(transactions).set(data).where(eq(transactions.id, id));
+      await db.transaction(async (tx) => {
+        // 1. Get old transaction
+        const oldTransaction = await tx.select().from(transactions).where(eq(transactions.id, id)).get();
+        if (!oldTransaction) return;
+
+        // 2. Revert old balance effect
+        const account = await tx.select().from(accounts).where(eq(accounts.id, oldTransaction.accountId)).get();
+        if (account) {
+          let balance = account.balance;
+          
+          // Revert old
+          balance = oldTransaction.type === 'income' 
+            ? balance - oldTransaction.amount 
+            : balance + oldTransaction.amount;
+
+          // Apply new (if changed, otherwise use old values)
+          const newAmount = data.amount !== undefined ? data.amount : oldTransaction.amount;
+          const newType = data.type !== undefined ? data.type : oldTransaction.type;
+
+          balance = newType === 'income'
+            ? balance + newAmount
+            : balance - newAmount;
+
+          await tx.update(accounts)
+            .set({ balance })
+            .where(eq(accounts.id, oldTransaction.accountId));
+        }
+
+        // 3. Update Transaction
+        await tx.update(transactions).set(data).where(eq(transactions.id, id));
+      });
+
       const allTransactions = await db.select().from(transactions).orderBy(desc(transactions.date));
       set({ transactions: allTransactions, isLoading: false });
     } catch (error) {

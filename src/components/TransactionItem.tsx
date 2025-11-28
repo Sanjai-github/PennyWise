@@ -19,7 +19,12 @@ const getCategoryIcon = (category: string, color: string) => {
   }
 };
 
+import { useSettingsStore } from '../store/useSettingsStore';
+
+// ...
+
 const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onLongPress }) => {
+  const { currencySymbol } = useSettingsStore();
   const isExpense = transaction.type === 'expense';
   const amountColor = isExpense ? 'text-error' : 'text-success';
   const iconColor = isExpense ? '#F44336' : '#4CAF50';
@@ -48,7 +53,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onLongPr
       </View>
       <View className="items-end">
         <Text className={`font-bold text-base ${amountColor}`}>
-          {isExpense ? '-' : '+'}${transaction.amount.toFixed(2)}
+          {isExpense ? '-' : '+'}{currencySymbol}{transaction.amount.toFixed(2)}
         </Text>
         <Text className="text-light-text-secondary dark:text-dark-text-secondary text-xs">
           {new Date(transaction.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

@@ -81,6 +81,17 @@ export const initDatabase = () => {
       console.log('Seeded default categories');
     }
 
+    // Seed default account if empty
+    const accountsResult = db.getAllSync('SELECT count(*) as count FROM accounts');
+    // @ts-ignore
+    if (accountsResult[0].count === 0) {
+      db.runSync(
+        "INSERT INTO accounts (name, type, balance, currency) VALUES (?, ?, ?, ?)",
+        ['Main Wallet', 'cash', 0, 'INR']
+      );
+      console.log('Seeded default account');
+    }
+
     // Migration: Add category column if it doesn't exist (for existing installs)
     try {
       db.execSync(`ALTER TABLE transactions ADD COLUMN category text NOT NULL DEFAULT 'General'`);

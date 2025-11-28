@@ -15,6 +15,7 @@ import HistoryScreen from './src/screens/HistoryScreen';
 import ManageCategoriesScreen from './src/screens/ManageCategoriesScreen';
 import BudgetScreen from './src/screens/BudgetScreen';
 import BottomTabs from './src/components/BottomTabs';
+import { useAccountStore } from './src/store/useAccountStore';
 import { useAuthStore } from './src/store/useAuthStore';
 
 export default function App() {
@@ -28,12 +29,14 @@ export default function App() {
   });
 
   const { isAuthenticated, initialize } = useAuthStore();
+  const { loadAccounts } = useAccountStore();
   const [currentScreen, setCurrentScreen] = useState<'login' | 'signup' | 'forgot-password'>('login');
   const [currentTab, setCurrentTab] = useState<'home' | 'history' | 'analytics' | 'budget' | 'settings' | 'manage-categories'>('home');
 
   useEffect(() => {
     initDatabase();
     initialize();
+    loadAccounts();
   }, []);
 
   if (!fontsLoaded) {

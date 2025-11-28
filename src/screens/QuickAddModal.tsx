@@ -59,6 +59,8 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ visible, onClose, initial
         note,
         createdAt: new Date(),
       });
+      // Refresh accounts to update balance
+      useAccountStore.getState().loadAccounts();
       onClose();
     } catch (error) {
       Alert.alert('Error', 'Failed to save transaction');

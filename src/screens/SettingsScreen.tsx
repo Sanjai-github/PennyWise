@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
 import { useAuthStore } from '../store/useAuthStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 import { createBackup, restoreBackup } from '../services/backupService';
 import { exportData } from '../services/exportService';
-import { ArrowLeft, Upload, Download, LogOut, ChevronRight, Shield, Grid, Moon, Sun, FileText, FileSpreadsheet } from 'lucide-react-native';
+import { ArrowLeft, Upload, Download, LogOut, ChevronRight, Shield, Grid, Moon, Sun, FileText, FileSpreadsheet, DollarSign } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 
 interface SettingsScreenProps {
@@ -12,7 +13,8 @@ interface SettingsScreenProps {
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onNavigateToCategories }) => {
-  const { logout, user } = useAuthStore();
+  const { logout, user, deleteAccount } = useAuthStore();
+  const { currency, setCurrency } = useSettingsStore();
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const iconColor = isDark ? '#E8E8E8' : '#2C2C2C';
@@ -39,6 +41,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onNavigateToCat
     Alert.alert('Log Out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Log Out', style: 'destructive', onPress: logout },
+    ]);
+  };
+
+  const handleCurrencyChange = () => {
+    Alert.alert('Select Currency', 'Choose your preferred currency', [
+      { text: 'USD ($)', onPress: () => setCurrency('USD') },
+      { text: 'INR (₹)', onPress: () => setCurrency('INR') },
+      { text: 'EUR (€)', onPress: () => setCurrency('EUR') },
+      { text: 'GBP (£)', onPress: () => setCurrency('GBP') },
+      { text: 'JPY (¥)', onPress: () => setCurrency('JPY') },
+      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
@@ -97,6 +110,22 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onNavigateToCat
               thumbColor="#FFF"
             />
           </View>
+
+          <TouchableOpacity 
+            onPress={handleCurrencyChange}
+            className="flex-row items-center justify-between p-4 border-b border-light-border dark:border-dark-border"
+          >
+            <View className="flex-row items-center gap-3">
+              <View className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/20 items-center justify-center">
+                <DollarSign size={18} color="#4CAF50" />
+              </View>
+              <Text className="text-light-text dark:text-dark-text font-medium">Currency</Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-light-text-secondary dark:text-dark-text-secondary">{currency}</Text>
+              <ChevronRight size={20} color={isDark ? '#6B7280' : '#9CA3AF'} />
+            </View>
+          </TouchableOpacity>
 
           <TouchableOpacity 
             onPress={onNavigateToCategories}
@@ -196,13 +225,53 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onNavigateToCat
           </TouchableOpacity>
         </View>
 
+        {/* Danger Zone */}
+        <Text className="text-light-text-secondary dark:text-dark-text-secondary font-bold text-xs uppercase tracking-wider mb-3 ml-1 text-red-500">
+          Danger Zone
+        </Text>
+        <View className="bg-red-50 dark:bg-red-900/10 rounded-2xl mb-6 border border-red-100 dark:border-red-900/30 overflow-hidden">
+          <TouchableOpacity 
+            onPress={() => {
+              Alert.alert(
+                'Delete Account',
+                'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { 
+                    text: 'Delete', 
+                    style: 'destructive', 
+                    onPress: async () => {
+                      try {
+                        await deleteAccount();
+                      } catch (error) {
+                        Alert.alert('Error', 'Failed to delete account');
+                      }
+                    }
+                  },
+                ]
+              );
+            }}
+            className="p-4 flex-row items-center justify-between"
+          >
+            <View className="flex-row items-center gap-3">
+              <View className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center">
+                <LogOut size={18} color="#F44336" />
+              </View>
+              <Text className="text-red-600 dark:text-red-400 font-medium text-base">
+                Delete Account
+              </Text>
+            </View>
+            <ChevronRight size={20} color="#F44336" />
+          </TouchableOpacity>
+        </View>
+
         {/* Logout */}
         <TouchableOpacity 
           onPress={handleLogout}
-          className="bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl flex-row items-center justify-center gap-2 mb-8"
+          className="bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border p-4 rounded-2xl flex-row items-center justify-center gap-2 mb-8"
         >
-          <LogOut size={20} color="#F44336" />
-          <Text className="text-red-500 font-bold text-base">Log Out</Text>
+          <LogOut size={20} color={isDark ? '#E8E8E8' : '#2C2C2C'} />
+          <Text className="text-light-text dark:text-dark-text font-bold text-base">Log Out</Text>
         </TouchableOpacity>
 
         <Text className="text-center text-light-text-secondary dark:text-dark-text-secondary text-xs mb-8">
