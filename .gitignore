@@ -8,11 +8,9 @@ node_modules/
 metro-cache/
 # Build output
 web-build/
-android/app/build/
-# Antigravity internal files
+android/
+ios/
 .agent/
-
-ios/build/
 # Logs
 npm-debug.log*
 yarn-debug.log*
@@ -44,7 +42,7 @@ fastlane/test_output/**
 app.json
 app.config.js
 # Generated assets
-assets/**
+
 # Expo prebuild files
 android/app/src/main/assets/shell-app.bundle
 android/app/src/main/assets/shell-app-manifest.json
