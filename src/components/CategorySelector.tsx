@@ -1,30 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import { Coffee, ShoppingBag, Home, Car, DollarSign, Heart, Briefcase, Gift, TrendingUp } from 'lucide-react-native';
+import * as Icons from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useCategoryStore } from '../store/useCategoryStore';
 
 interface CategorySelectorProps {
   type: 'income' | 'expense';
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
 }
-
-const EXPENSE_CATEGORIES = [
-  { id: 'Food', icon: Coffee },
-  { id: 'Transport', icon: Car },
-  { id: 'Shopping', icon: ShoppingBag },
-  { id: 'Housing', icon: Home },
-  { id: 'Health', icon: Heart },
-  { id: 'Other', icon: DollarSign },
-];
-
-const INCOME_CATEGORIES = [
-  { id: 'Salary', icon: Briefcase },
-  { id: 'Freelance', icon: Briefcase },
-  { id: 'Gift', icon: Gift },
-  { id: 'Investment', icon: TrendingUp },
-  { id: 'Other', icon: DollarSign },
-];
 
 const CategorySelector: React.FC<CategorySelectorProps> = ({ 
   type, 
@@ -33,20 +17,27 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 }) => {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const categories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const { categories, loadCategories } = useCategoryStore();
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const filteredCategories = categories.filter(c => c.type === type);
 
   return (
     <View>
       <Text className="text-light-text dark:text-dark-text font-medium mb-3">Category</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-3">
-        {categories.map((cat) => {
-          const isSelected = selectedCategory === cat.id;
-          const Icon = cat.icon;
+        {filteredCategories.map((cat) => {
+          const isSelected = selectedCategory === cat.name;
+          // @ts-ignore
+          const Icon = Icons[cat.icon] || Icons.HelpCircle;
           
           return (
             <Pressable
               key={cat.id}
-              onPress={() => onSelectCategory(cat.id)}
+              onPress={() => onSelectCategory(cat.name)}
               className={`
                 flex-row items-center gap-2 px-4 py-2 rounded-full border mr-2
                 ${isSelected 
@@ -54,24 +45,22 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
                   : 'bg-transparent border-light-border dark:border-dark-border'
                 }
               `}
+              style={isSelected ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
             >
               <Icon 
                 size={16} 
-                color={isSelected 
-                  ? (isDark ? '#FFF' : '#2C2C2C') 
-                  : (isDark ? '#A0A0A0' : '#6B6B6B')
-                } 
+                color={isSelected ? '#FFF' : (isDark ? '#A0A0A0' : '#6B6B6B')} 
               />
               <Text 
                 className={`
                   font-medium
                   ${isSelected 
-                    ? 'text-light-text dark:text-dark-text' 
+                    ? 'text-white' 
                     : 'text-light-text-secondary dark:text-dark-text-secondary'
                   }
                 `}
               >
-                {cat.id}
+                {cat.name}
               </Text>
             </Pressable>
           );

@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Transaction } from '../db/schema';
 import { ShoppingBag, Coffee, Home, Car, DollarSign, ArrowUpRight, ArrowDownLeft } from 'lucide-react-native';
 
 interface TransactionItemProps {
   transaction: Transaction;
+  onLongPress?: () => void;
 }
 
 const getCategoryIcon = (category: string, color: string) => {
@@ -18,14 +19,20 @@ const getCategoryIcon = (category: string, color: string) => {
   }
 };
 
-const TransactionItem: React.FC<TransactionItemProps> = ({ transaction }) => {
+const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onLongPress }) => {
   const isExpense = transaction.type === 'expense';
   const amountColor = isExpense ? 'text-error' : 'text-success';
   const iconColor = isExpense ? '#F44336' : '#4CAF50';
   const iconBg = isExpense ? 'bg-red-100 dark:bg-red-900/20' : 'bg-green-100 dark:bg-green-900/20';
 
+  const Container = onLongPress ? TouchableOpacity : View;
+
   return (
-    <View className="flex-row items-center justify-between py-3 border-b border-light-border dark:border-dark-border last:border-0">
+    <Container 
+      onLongPress={onLongPress}
+      activeOpacity={0.7}
+      className="flex-row items-center justify-between py-3 border-b border-light-border dark:border-dark-border last:border-0"
+    >
       <View className="flex-row items-center gap-3">
         <View className={`w-10 h-10 rounded-full items-center justify-center ${iconBg}`}>
           {getCategoryIcon(transaction.category, iconColor)}
@@ -47,7 +54,7 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction }) => {
           {new Date(transaction.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
       </View>
-    </View>
+    </Container>
   );
 };
 

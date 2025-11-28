@@ -9,6 +9,12 @@ import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import AnalyticsScreen from './src/screens/AnalyticsScreen';
+import HistoryScreen from './src/screens/HistoryScreen';
+import ManageCategoriesScreen from './src/screens/ManageCategoriesScreen';
+import BudgetScreen from './src/screens/BudgetScreen';
+import BottomTabs from './src/components/BottomTabs';
 import { useAuthStore } from './src/store/useAuthStore';
 
 export default function App() {
@@ -23,6 +29,7 @@ export default function App() {
 
   const { isAuthenticated, initialize } = useAuthStore();
   const [currentScreen, setCurrentScreen] = useState<'login' | 'signup' | 'forgot-password'>('login');
+  const [currentTab, setCurrentTab] = useState<'home' | 'history' | 'analytics' | 'budget' | 'settings' | 'manage-categories'>('home');
 
   useEffect(() => {
     initDatabase();
@@ -55,7 +62,36 @@ export default function App() {
 
   return (
     <View className="flex-1 bg-light-bg dark:bg-dark-bg">
-      <HomeScreen />
+      <View className="flex-1 pb-24">
+        {currentTab === 'home' && (
+          <HomeScreen onNavigateToSettings={() => setCurrentTab('settings')} />
+        )}
+        {currentTab === 'history' && (
+          <HistoryScreen />
+        )}
+        {currentTab === 'analytics' && (
+          <AnalyticsScreen />
+        )}
+        {currentTab === 'budget' && (
+          <BudgetScreen />
+        )}
+        {currentTab === 'settings' && (
+          <SettingsScreen 
+            onBack={() => setCurrentTab('home')} 
+            onNavigateToCategories={() => setCurrentTab('manage-categories')}
+          />
+        )}
+        {currentTab === 'manage-categories' && (
+          <ManageCategoriesScreen onBack={() => setCurrentTab('settings')} />
+        )}
+      </View>
+      
+      {currentTab !== 'manage-categories' && (
+        <BottomTabs 
+          currentTab={currentTab as any} 
+          onTabChange={(tab) => setCurrentTab(tab)} 
+        />
+      )}
       <StatusBar style="auto" />
     </View>
   );

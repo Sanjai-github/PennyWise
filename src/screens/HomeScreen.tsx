@@ -1,14 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useAccountStore } from '../store/useAccountStore';
 import { useTransactionStore } from '../store/useTransactionStore';
 import { Card, Button } from '../components';
 import TransactionItem from '../components/TransactionItem';
 import QuickAddModal from './QuickAddModal';
-import { Plus, Minus, Wallet, TrendingUp, TrendingDown } from 'lucide-react-native';
+import { Plus, Minus, Wallet, TrendingUp, TrendingDown, Settings } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 
-const HomeScreen = () => {
+interface HomeScreenProps {
+  onNavigateToSettings: () => void;
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
   const { accounts, loadAccounts, isLoading: accountsLoading } = useAccountStore();
   const { transactions, loadTransactions, isLoading: transactionsLoading } = useTransactionStore();
   const { colorScheme } = useColorScheme();
@@ -45,7 +49,7 @@ const HomeScreen = () => {
 
   return (
     <>
-      <ScrollView 
+      <ScrollView
         className="flex-1 bg-light-bg dark:bg-dark-bg"
         refreshControl={
           <RefreshControl refreshing={accountsLoading || transactionsLoading} onRefresh={onRefresh} />
@@ -53,16 +57,24 @@ const HomeScreen = () => {
       >
         <View className="p-6 pt-16 gap-6">
           {/* Header */}
-          <View>
-            <Text className="text-light-text-secondary dark:text-dark-text-secondary text-sm font-medium">
-              Good Morning,
-            </Text>
-            <Text 
-              className="text-light-text dark:text-dark-text text-2xl font-bold"
-              style={{ fontFamily: 'Outfit_700Bold' }}
+          <View className="flex-row justify-between items-start">
+            <View>
+              <Text className="text-light-text-secondary dark:text-dark-text-secondary text-sm font-medium">
+                Good Morning,
+              </Text>
+              <Text
+                className="text-light-text dark:text-dark-text text-2xl font-bold"
+                style={{ fontFamily: 'Outfit_700Bold' }}
+              >
+                Penny Wise
+              </Text>
+            </View>
+            <TouchableOpacity 
+              onPress={onNavigateToSettings}
+              className="w-10 h-10 rounded-full bg-light-surface dark:bg-dark-surface items-center justify-center border border-light-border dark:border-dark-border"
             >
-              Penny Wise
-            </Text>
+              <Settings size={20} color={textColor} />
+            </TouchableOpacity>
           </View>
 
           {/* Balance Card */}
@@ -70,13 +82,13 @@ const HomeScreen = () => {
             <Text className="text-dark-text/70 text-sm font-medium mb-1">
               Total Balance
             </Text>
-            <Text 
+            <Text
               className="text-dark-text text-4xl font-bold mb-6"
               style={{ fontFamily: 'Outfit_700Bold' }}
             >
               ${totalBalance.toFixed(2)}
             </Text>
-            
+
             <View className="flex-row gap-4">
               <View className="flex-1 bg-white/20 rounded-xl p-3 flex-row items-center gap-3">
                 <View className="w-8 h-8 rounded-full bg-white/30 items-center justify-center">
@@ -122,7 +134,7 @@ const HomeScreen = () => {
           {/* Recent Transactions */}
           <View>
             <View className="flex-row items-center justify-between mb-4">
-              <Text 
+              <Text
                 className="text-light-text dark:text-dark-text text-xl font-bold"
                 style={{ fontFamily: 'Outfit_600SemiBold' }}
               >
@@ -144,19 +156,19 @@ const HomeScreen = () => {
                 <View className="py-8 items-center justify-center">
                   <Wallet size={48} color={secondaryTextColor} />
                   <Text className="text-light-text-secondary dark:text-dark-text-secondary mt-2 text-center">
-                    No transactions yet.{'\n'}Add your first one!
+                    No transactions yet.&#10;Add your first one!
                   </Text>
                 </View>
               )}
             </Card>
           </View>
-          
+
           <View className="h-8" />
         </View>
       </ScrollView>
 
-      <QuickAddModal 
-        visible={isModalVisible} 
+      <QuickAddModal
+        visible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
         initialType={modalType}
       />

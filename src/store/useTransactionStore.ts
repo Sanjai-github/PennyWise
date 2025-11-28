@@ -10,6 +10,7 @@ interface TransactionState {
   loadTransactions: () => Promise<void>;
   addTransaction: (transaction: NewTransaction) => Promise<void>;
   deleteTransaction: (id: number) => Promise<void>;
+  updateTransaction: (id: number, data: Partial<NewTransaction>) => Promise<void>;
 }
 
 export const useTransactionStore = create<TransactionState>((set) => ({
@@ -48,6 +49,18 @@ export const useTransactionStore = create<TransactionState>((set) => ({
       set({ transactions: allTransactions, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to delete transaction', isLoading: false });
+      console.error(error);
+    }
+  },
+
+  updateTransaction: async (id: number, data: Partial<NewTransaction>) => {
+    set({ isLoading: true, error: null });
+    try {
+      await db.update(transactions).set(data).where(eq(transactions.id, id));
+      const allTransactions = await db.select().from(transactions).orderBy(desc(transactions.date));
+      set({ transactions: allTransactions, isLoading: false });
+    } catch (error) {
+      set({ error: 'Failed to update transaction', isLoading: false });
       console.error(error);
     }
   },
