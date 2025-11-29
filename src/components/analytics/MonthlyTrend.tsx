@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { useColorScheme } from 'nativewind';
 import { Transaction } from '../../db/schema';
+import { ChevronDown } from 'lucide-react-native';
 
 interface MonthlyTrendProps {
   transactions: Transaction[];
@@ -15,6 +16,7 @@ const MonthlyTrend: React.FC<MonthlyTrendProps> = ({ transactions, currencySymbo
   const screenWidth = Dimensions.get('window').width;
 
   const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'savings'>('expense');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const chartData = useMemo(() => {
     const last6Months = new Array(6).fill(0).map((_, i) => {
@@ -66,31 +68,52 @@ const MonthlyTrend: React.FC<MonthlyTrendProps> = ({ transactions, currencySymbo
 
   const color = getChartColor();
 
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+
+  const handleSelect = (tab: 'expense' | 'income' | 'savings') => {
+    setActiveTab(tab);
+    setIsDropdownOpen(false);
+  };
+
   return (
-    <View className="bg-light-surface dark:bg-dark-surface rounded-3xl p-6 mb-6 shadow-sm border border-light-border dark:border-white/5">
-      <View className="flex-row justify-between items-center mb-6">
+    <View className="bg-light-surface dark:bg-dark-surface rounded-3xl p-6 mb-6 shadow-sm border border-light-border dark:border-white/5 z-50">
+      <View className="flex-row justify-between items-center mb-6 z-50">
         <Text className="text-light-text-secondary dark:text-dark-text-secondary font-medium">
           Monthly Trend
         </Text>
-      </View>
-
-      {/* Toggles */}
-      <View className="flex-row bg-gray-100 dark:bg-white/5 p-1 rounded-xl mb-6">
-        {(['expense', 'income', 'savings'] as const).map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            className={`flex-1 py-2 rounded-lg items-center ${activeTab === tab ? 'bg-white dark:bg-white/10 shadow-sm' : ''}`}
+        
+        <View className="relative z-50">
+          <TouchableOpacity 
+            onPress={toggleDropdown}
+            className="flex-row items-center gap-2 bg-gray-100 dark:bg-white/5 px-3 py-1.5 rounded-full"
           >
-            <Text className={`text-xs font-semibold capitalize ${activeTab === tab ? 'text-light-text dark:text-dark-text' : 'text-gray-400'}`}>
-              {tab}
+            <Text className="text-sm font-semibold capitalize text-light-text dark:text-dark-text">
+              {activeTab}
             </Text>
+            <ChevronDown size={16} color={isDark ? '#FFF' : '#000'} />
           </TouchableOpacity>
-        ))}
+
+          {isDropdownOpen && (
+            <View className="absolute top-10 right-0 w-32 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
+              {(['expense', 'income', 'savings'] as const).map((tab) => (
+                <TouchableOpacity
+                  key={tab}
+                  onPress={() => handleSelect(tab)}
+                  className={`px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0 ${activeTab === tab ? 'bg-gray-50 dark:bg-white/5' : ''}`}
+                >
+                  <Text className={`text-sm capitalize ${activeTab === tab ? 'font-semibold text-light-text dark:text-dark-text' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {tab}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
 
-      <View className="items-center -ml-4">
+      <View className="items-center -ml-4 -z-10">
         <LineChart
+          key={activeTab}
           data={chartData}
           curved
           thickness={3}
