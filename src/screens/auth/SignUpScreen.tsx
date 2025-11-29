@@ -80,7 +80,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
           <View className="items-center mb-6">
             <View className="w-48 h-48">
               <LottieView
-                source={require('../../../assets/animations/signup.json')}
+                source={require('../../../assets/animations/Sign up.json')}
                 autoPlay
                 loop
                 style={{ width: '100%', height: '100%' }}

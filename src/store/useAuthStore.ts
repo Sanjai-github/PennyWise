@@ -9,17 +9,26 @@ interface User {
   id: number;
   name: string;
   email: string;
+  profileImage?: string | null;
 }
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  otp: string | null;
+  otpEmail: string | null;
+  otpExpiry: number | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   initialize: () => Promise<void>;
+  sendOtp: (email: string) => Promise<void>;
+  verifyOtp: (email: string, code: string) => Promise<boolean>;
+  resetPassword: (email: string, newPassword: string) => Promise<void>;
+  loginWithOtp: (email: string) => Promise<void>;
+  updateProfileImage: (uri: string | null) => Promise<void>;
 }
 
 const hashPassword = async (password: string) => {
@@ -43,7 +52,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (result.length > 0) {
           const user = result[0];
           set({
-            user: { id: user.id, name: user.name, email: user.email },
+            user: { id: user.id, name: user.name, email: user.email, profileImage: user.profileImage },
             isAuthenticated: true,
           });
         }
@@ -70,7 +79,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       await AsyncStorage.setItem('userId', user.id.toString());
       set({
-        user: { id: user.id, name: user.name, email: user.email },
+        user: { id: user.id, name: user.name, email: user.email, profileImage: user.profileImage },
         isAuthenticated: true,
         isLoading: false,
       });
@@ -101,10 +110,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await AsyncStorage.setItem('userId', newUser.id.toString());
       
       set({
-        user: { id: newUser.id, name: newUser.name, email: newUser.email },
+        user: { id: newUser.id, name: newUser.name, email: newUser.email, profileImage: null },
         isAuthenticated: true,
         isLoading: false,
       });
+
+      // Reset onboarding for new user
+      const { resetOnboarding } = require('./useSettingsStore').useSettingsStore.getState();
+      resetOnboarding();
     } catch (error) {
       set({ isLoading: false });
       throw error;
@@ -114,6 +127,108 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     await AsyncStorage.removeItem('userId');
     set({ user: null, isAuthenticated: false });
+  },
+
+  otp: null as string | null,
+  otpEmail: null as string | null,
+  otpExpiry: null as number | null,
+
+  sendOtp: async (email: string) => {
+    set({ isLoading: true });
+    try {
+      // Check if user exists
+      const result = await db.select().from(users).where(eq(users.email, email));
+      if (result.length === 0) {
+        throw new Error('User not found');
+      }
+
+      // Generate 4-digit OTP
+      const code = Math.floor(1000 + Math.random() * 9000).toString();
+      const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+
+      set({ otp: code, otpEmail: email, otpExpiry: expiry, isLoading: false });
+      
+      // Simulate sending email
+      // In production, call your API here
+      setTimeout(() => {
+        alert(`Your OTP is: ${code}`); 
+      }, 500);
+      
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  verifyOtp: async (email: string, code: string) => {
+    set({ isLoading: true });
+    try {
+      const { otp, otpEmail, otpExpiry } = get();
+      
+      if (email !== otpEmail) {
+        throw new Error('Email mismatch');
+      }
+      
+      if (!otp || !otpExpiry || Date.now() > otpExpiry) {
+        throw new Error('OTP expired. Please request a new one.');
+      }
+
+      if (code !== otp) {
+        throw new Error('Invalid OTP');
+      }
+
+      // OTP Verified
+      set({ isLoading: false });
+      return true;
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  resetPassword: async (email: string, newPassword: string) => {
+    set({ isLoading: true });
+    try {
+      const hashedPassword = await hashPassword(newPassword);
+      await db.update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.email, email));
+        
+      set({ 
+        otp: null, 
+        otpEmail: null, 
+        otpExpiry: null, 
+        isLoading: false 
+      });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  loginWithOtp: async (email: string) => {
+    set({ isLoading: true });
+    try {
+      const result = await db.select().from(users).where(eq(users.email, email));
+      if (result.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const user = result[0];
+      await AsyncStorage.setItem('userId', user.id.toString());
+      
+      set({
+        user: { id: user.id, name: user.name, email: user.email, profileImage: user.profileImage },
+        isAuthenticated: true,
+        isLoading: false,
+        otp: null,
+        otpEmail: null,
+        otpExpiry: null
+      });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
   },
 
   deleteAccount: async () => {
@@ -151,6 +266,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       set({ isLoading: false });
       console.error('Failed to delete account:', error);
+      throw error;
+    }
+  },
+
+  updateProfileImage: async (uri: string | null) => {
+    const { user } = get();
+    if (!user) return;
+
+    try {
+      await db.update(users)
+        .set({ profileImage: uri })
+        .where(eq(users.id, user.id));
+
+      set({ user: { ...user, profileImage: uri } });
+    } catch (error) {
+      console.error('Failed to update profile image:', error);
       throw error;
     }
   },

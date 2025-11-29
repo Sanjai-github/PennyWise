@@ -25,6 +25,7 @@ export const users = sqliteTable('users', {
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   password: text('password').notNull(),
+  profileImage: text('profile_image'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
 });
 

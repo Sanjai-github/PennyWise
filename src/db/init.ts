@@ -81,30 +81,16 @@ export const initDatabase = () => {
       console.log('Seeded default categories');
     }
 
-    // Seed default account if empty
-    const accountsResult = db.getAllSync('SELECT count(*) as count FROM accounts');
-    // @ts-ignore
-    if (accountsResult[0].count === 0) {
-      db.runSync(
-        "INSERT INTO accounts (name, type, balance, currency) VALUES (?, ?, ?, ?)",
-        ['Main Wallet', 'cash', 0, 'INR']
-      );
-      console.log('Seeded default account');
-    }
-
-    // Migration: Add category column if it doesn't exist (for existing installs)
+    // Migration for profile_image column in users table
     try {
-      db.execSync(`ALTER TABLE transactions ADD COLUMN category text NOT NULL DEFAULT 'General'`);
-      console.log('Added category column to transactions');
+      const result = db.getAllSync('SELECT count(*) as count FROM pragma_table_info("users") WHERE name="profile_image"');
+      // @ts-ignore
+      if (result[0].count === 0) {
+        db.runSync('ALTER TABLE users ADD COLUMN profile_image TEXT');
+        console.log('Added profile_image column to users table');
+      }
     } catch (e) {
-      // Column likely already exists, ignore
-    }
-
-    try {
-      db.execSync(`ALTER TABLE transactions ADD COLUMN created_at integer DEFAULT (unixepoch()) NOT NULL`);
-      console.log('Added created_at column to transactions');
-    } catch (e) {
-      // Column likely already exists, ignore
+      console.log('Profile image column check failed or already exists');
     }
   } catch (error) {
     console.error('Failed to initialize database:', error);

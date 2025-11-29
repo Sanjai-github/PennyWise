@@ -1,23 +1,73 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Switch, Image } from 'react-native';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { createBackup, restoreBackup } from '../services/backupService';
 import { exportData } from '../services/exportService';
-import { ArrowLeft, Upload, Download, LogOut, ChevronRight, Shield, Grid, Moon, Sun, FileText, FileSpreadsheet, DollarSign } from 'lucide-react-native';
+import { ArrowLeft, Upload, Download, LogOut, ChevronRight, Shield, Grid, Moon, Sun, FileText, FileSpreadsheet, DollarSign, Camera, User } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import * as ImagePicker from 'expo-image-picker';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 interface SettingsScreenProps {
   onBack: () => void;
   onNavigateToCategories: () => void;
+  onNavigateToForgotPassword: () => void;
 }
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onNavigateToCategories }) => {
-  const { logout, user, deleteAccount } = useAuthStore();
-  const { currency, setCurrency } = useSettingsStore();
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onNavigateToCategories, onNavigateToForgotPassword }) => {
+  const { logout, user, deleteAccount, updateProfileImage } = useAuthStore();
+  const { currency, setCurrency, isBiometricEnabled, toggleBiometric } = useSettingsStore();
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const iconColor = isDark ? '#E8E8E8' : '#2C2C2C';
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant permission to access your photos');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      try {
+        await updateProfileImage(result.assets[0].uri);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to update profile picture');
+      }
+    }
+  };
+
+  const handleToggleBiometric = async (value: boolean) => {
+    if (value) {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert('Error', 'Biometrics not available or not set up on this device.');
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to enable biometric unlock',
+      });
+
+      if (result.success) {
+        toggleBiometric(true, user?.id);
+      } else {
+        Alert.alert('Error', 'Authentication failed');
+      }
+    } else {
+      toggleBiometric(false, null);
+    }
+  };
 
   const handleBackup = async () => {
     await createBackup();
@@ -74,11 +124,20 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onNavigateToCat
         {/* Profile Section */}
         <View className="bg-light-surface dark:bg-dark-surface p-4 rounded-2xl mb-6 border border-light-border dark:border-dark-border">
           <View className="flex-row items-center gap-4 mb-4">
-            <View className="w-16 h-16 rounded-full bg-light-primary dark:bg-dark-primary items-center justify-center">
-              <Text className="text-white text-2xl font-bold">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </Text>
-            </View>
+            <TouchableOpacity onPress={pickImage} className="relative">
+              <View className="w-16 h-16 rounded-full bg-light-primary dark:bg-dark-primary items-center justify-center overflow-hidden">
+                {user?.profileImage ? (
+                  <Image source={{ uri: user.profileImage }} className="w-full h-full" />
+                ) : (
+                  <Text className="text-white text-2xl font-bold">
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </Text>
+                )}
+              </View>
+              <View className="absolute bottom-0 right-0 bg-light-surface dark:bg-dark-surface rounded-full p-1 border border-light-border dark:border-dark-border">
+                <Camera size={12} color={iconColor} />
+              </View>
+            </TouchableOpacity>
             <View>
               <Text className="text-light-text dark:text-dark-text text-lg font-bold">
                 {user?.name || 'User'}
@@ -212,7 +271,25 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onNavigateToCat
           Security
         </Text>
         <View className="bg-light-surface dark:bg-dark-surface rounded-2xl mb-6 border border-light-border dark:border-dark-border overflow-hidden">
-          <TouchableOpacity className="p-4 flex-row items-center justify-between">
+          <View className="flex-row items-center justify-between p-4 border-b border-light-border dark:border-dark-border">
+            <View className="flex-row items-center gap-3">
+              <View className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/20 items-center justify-center">
+                <Shield size={18} color="#6366F1" />
+              </View>
+              <Text className="text-light-text dark:text-dark-text font-medium">Biometric Unlock</Text>
+            </View>
+            <Switch 
+              value={isBiometricEnabled} 
+              onValueChange={handleToggleBiometric}
+              trackColor={{ false: '#E5E7EB', true: '#818CF8' }}
+              thumbColor="#FFF"
+            />
+          </View>
+
+          <TouchableOpacity 
+            onPress={onNavigateToForgotPassword}
+            className="p-4 flex-row items-center justify-between"
+          >
             <View className="flex-row items-center gap-3">
               <View className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center">
                 <Shield size={18} color="#4CAF50" />

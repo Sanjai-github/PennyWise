@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, Image } from 'react-native';
 import { useAccountStore } from '../store/useAccountStore';
 import { useTransactionStore } from '../store/useTransactionStore';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { Card, Button } from '../components';
 import TransactionItem from '../components/TransactionItem';
 import QuickAddModal from './QuickAddModal';
-import { Plus, Minus, Wallet, TrendingUp, TrendingDown, Settings } from 'lucide-react-native';
+import { Plus, Minus, Wallet, TrendingUp, TrendingDown, Settings, User } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 
 interface HomeScreenProps {
@@ -17,6 +18,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
   const { accounts, loadAccounts, recalculateBalance, isLoading: accountsLoading } = useAccountStore();
   const { transactions, loadTransactions, isLoading: transactionsLoading } = useTransactionStore();
   const { currencySymbol } = useSettingsStore();
+  const { user } = useAuthStore();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -33,6 +35,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
     loadAccounts();
     loadTransactions();
     recalculateBalance();
+  }, []);
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
   }, []);
 
   const totalBalance = useMemo(() => {
@@ -82,23 +91,27 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
       >
         <View className="p-6 pt-16 gap-6">
           {/* Header */}
-          <View className="flex-row justify-between items-start">
+          <View className="flex-row justify-between items-center">
             <View>
               <Text className="text-light-text-secondary dark:text-dark-text-secondary text-sm font-medium">
-                Good Morning,
+                {greeting},
               </Text>
               <Text
                 className="text-light-text dark:text-dark-text text-2xl font-bold"
                 style={{ fontFamily: 'Outfit_700Bold' }}
               >
-                Penny Wise
+                {user?.name || 'Penny Wise'}
               </Text>
             </View>
             <TouchableOpacity 
               onPress={onNavigateToSettings}
-              className="w-10 h-10 rounded-full bg-light-surface dark:bg-dark-surface items-center justify-center border border-light-border dark:border-dark-border"
+              className="w-12 h-12 rounded-full bg-light-surface dark:bg-dark-surface items-center justify-center border border-light-border dark:border-dark-border overflow-hidden"
             >
-              <Settings size={20} color={textColor} />
+              {user?.profileImage ? (
+                <Image source={{ uri: user.profileImage }} className="w-full h-full" />
+              ) : (
+                <User size={24} color={textColor} />
+              )}
             </TouchableOpacity>
           </View>
 
