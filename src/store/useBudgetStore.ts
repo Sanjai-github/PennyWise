@@ -37,11 +37,17 @@ export const useBudgetStore = create<BudgetState>((set) => ({
       if (existing.length > 0) {
         // Update existing
         await db.update(budgets)
-          .set({ amount: newBudget.amount })
+          .set({ 
+            amount: newBudget.amount,
+            rolloverEnabled: newBudget.rolloverEnabled 
+          })
           .where(eq(budgets.id, existing[0].id));
       } else {
         // Insert new
-        await db.insert(budgets).values(newBudget);
+        await db.insert(budgets).values({
+          ...newBudget,
+          rolloverEnabled: newBudget.rolloverEnabled || false,
+        });
       }
 
       const allBudgets = await db.select().from(budgets);

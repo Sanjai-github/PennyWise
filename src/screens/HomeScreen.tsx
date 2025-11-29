@@ -6,7 +6,7 @@ import { useSettingsStore } from '../store/useSettingsStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { useCategoryStore } from '../store/useCategoryStore';
 import { Button } from '../components';
-import { Wallet, TrendingUp, TrendingDown, User, Coffee, ShoppingBag, Home, Car, DollarSign, ArrowUpRight, ArrowDownLeft } from 'lucide-react-native';
+import { Wallet, TrendingUp, TrendingDown, User, Coffee, ShoppingBag, Home, Car, DollarSign, ArrowUpRight, ArrowDownLeft, Target } from 'lucide-react-native';
 import * as LucideIcons from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,11 +17,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface HomeScreenProps {
   onNavigateToSettings: () => void;
+  onNavigateToGoals: () => void;
 }
 
 const { width } = Dimensions.get('window');
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings, onNavigateToGoals }) => {
   const { accounts, loadAccounts, recalculateBalance, isLoading: accountsLoading } = useAccountStore();
   const { transactions, loadTransactions, isLoading: transactionsLoading } = useTransactionStore();
   const { categories, loadCategories } = useCategoryStore();
@@ -180,16 +181,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings }) => {
               {user?.name || 'Penny Wise'}
             </Text>
           </View>
-          <TouchableOpacity 
-            onPress={onNavigateToSettings}
-            className="w-12 h-12 rounded-full bg-light-surface dark:bg-white/10 items-center justify-center border border-light-border dark:border-white/10 overflow-hidden"
-          >
-            {user?.profileImage ? (
-              <Image source={{ uri: user.profileImage }} className="w-full h-full" />
-            ) : (
-              <User size={24} color={textColor} />
-            )}
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-3">
+            <TouchableOpacity 
+              onPress={onNavigateToGoals}
+              className="w-12 h-12 rounded-full bg-light-surface dark:bg-white/10 items-center justify-center border border-light-border dark:border-white/10"
+            >
+              <Target size={24} color={textColor} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={onNavigateToSettings}
+              className="w-12 h-12 rounded-full bg-light-surface dark:bg-white/10 items-center justify-center border border-light-border dark:border-white/10 overflow-hidden"
+            >
+              {user?.profileImage ? (
+                <Image source={{ uri: user.profileImage }} className="w-full h-full" />
+              ) : (
+                <User size={24} color={textColor} />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Scrollable Content */}

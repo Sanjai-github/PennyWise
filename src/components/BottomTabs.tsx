@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
-import { Home, PieChart, Clock, Wallet, Plus } from 'lucide-react-native';
+import { Home, PieChart, Clock, Wallet, Plus, Target } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 
@@ -17,8 +17,8 @@ const BottomTabs: React.FC<BottomTabsProps> = ({ currentTab, onTabChange, onAddP
   const tabs = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'history', icon: Clock, label: 'History' },
-    { id: 'analytics', icon: PieChart, label: 'Analytics' },
     { id: 'budget', icon: Wallet, label: 'Budget' },
+    { id: 'analytics', icon: PieChart, label: 'Analytics' },
   ] as const;
 
   return (

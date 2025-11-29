@@ -16,6 +16,7 @@ import AnalyticsScreen from './src/screens/AnalyticsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import ManageCategoriesScreen from './src/screens/ManageCategoriesScreen';
 import BudgetScreen from './src/screens/BudgetScreen';
+import GoalsScreen from './src/screens/GoalsScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import BottomTabs from './src/components/BottomTabs';
 import QuickAddModal from './src/screens/QuickAddModal';
@@ -38,7 +39,7 @@ export default function App() {
   const { loadAccounts } = useAccountStore();
   const { isOnboardingCompleted } = useSettingsStore();
   const [currentScreen, setCurrentScreen] = useState<'login' | 'signup' | 'forgot-password'>('login');
-  const [currentTab, setCurrentTab] = useState<'home' | 'history' | 'analytics' | 'budget' | 'settings' | 'manage-categories' | 'forgot-password'>('home');
+  const [currentTab, setCurrentTab] = useState<'home' | 'history' | 'analytics' | 'budget' | 'goals' | 'settings' | 'manage-categories' | 'forgot-password'>('home');
   const [isQuickAddVisible, setIsQuickAddVisible] = useState(false);
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -84,7 +85,10 @@ export default function App() {
       <View className="flex-1 bg-light-bg dark:bg-dark-bg">
         <View className="flex-1 pb-24">
           {currentTab === 'home' && (
-            <HomeScreen onNavigateToSettings={() => setCurrentTab('settings')} />
+            <HomeScreen 
+              onNavigateToSettings={() => setCurrentTab('settings')} 
+              onNavigateToGoals={() => setCurrentTab('goals')}
+            />
           )}
           {currentTab === 'history' && (
             <HistoryScreen />
@@ -94,6 +98,9 @@ export default function App() {
           )}
           {currentTab === 'budget' && (
             <BudgetScreen />
+          )}
+          {currentTab === 'goals' && (
+            <GoalsScreen />
           )}
           {currentTab === 'settings' && (
             <SettingsScreen 

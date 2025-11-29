@@ -42,7 +42,25 @@ export const budgets = sqliteTable('budgets', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   category: text('category').notNull(), // references category name
   amount: real('amount').notNull(),
+  rolloverEnabled: integer('rollover_enabled', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
+});
+
+export const goals = sqliteTable('goals', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  targetAmount: real('target_amount').notNull(),
+  currentAmount: real('current_amount').notNull().default(0),
+  deadline: integer('deadline', { mode: 'timestamp' }),
+  icon: text('icon').notNull(),
+  color: text('color').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date()),
+});
+
+export const goalsWallet = sqliteTable('goals_wallet', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  balance: real('balance').notNull().default(0),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
 });
 
 export type Account = typeof accounts.$inferSelect;
@@ -59,3 +77,9 @@ export type NewCategory = typeof categories.$inferInsert;
 
 export type Budget = typeof budgets.$inferSelect;
 export type NewBudget = typeof budgets.$inferInsert;
+
+export type Goal = typeof goals.$inferSelect;
+export type NewGoal = typeof goals.$inferInsert;
+
+export type GoalsWallet = typeof goalsWallet.$inferSelect;
+export type NewGoalsWallet = typeof goalsWallet.$inferInsert;

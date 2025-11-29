@@ -70,6 +70,8 @@ export const initDatabase = () => {
         { name: 'Gift', type: 'income', icon: 'Gift', color: '#CDDC39' },
         { name: 'Investment', type: 'income', icon: 'TrendingUp', color: '#FFC107' },
         { name: 'Other', type: 'income', icon: 'DollarSign', color: '#FF9800' },
+        // Goal Fund
+        { name: 'Goal Fund', type: 'expense', icon: 'Target', color: '#FF9800', isDefault: true },
       ];
 
       defaultCategories.forEach(cat => {
@@ -116,6 +118,50 @@ export const initDatabase = () => {
     } catch (e) {
       console.log('is_custom column check failed or already exists');
     }
+
+    // Migration for rollover_enabled column in budgets table
+    try {
+      const result = db.getAllSync('SELECT count(*) as count FROM pragma_table_info("budgets") WHERE name="rollover_enabled"');
+      // @ts-ignore
+      if (result[0].count === 0) {
+        db.runSync('ALTER TABLE budgets ADD COLUMN rollover_enabled INTEGER DEFAULT 0 NOT NULL');
+        console.log('Added rollover_enabled column to budgets table');
+      }
+    } catch (e) {
+      console.log('rollover_enabled column check failed or already exists');
+    }
+
+    // Create Goals Table
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS goals (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        name text NOT NULL,
+        target_amount real NOT NULL,
+        current_amount real DEFAULT 0 NOT NULL,
+        deadline integer,
+        icon text NOT NULL,
+        color text NOT NULL,
+        created_at integer DEFAULT (unixepoch()) NOT NULL
+      );
+    `);
+
+    // Create Goals Wallet Table
+    db.execSync(`
+      CREATE TABLE IF NOT EXISTS goals_wallet (
+        id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+        balance real DEFAULT 0 NOT NULL,
+        updated_at integer DEFAULT (unixepoch()) NOT NULL
+      );
+    `);
+
+    // Initialize Wallet if empty
+    const walletResult = db.getAllSync('SELECT count(*) as count FROM goals_wallet');
+    // @ts-ignore
+    if (walletResult[0].count === 0) {
+      db.runSync('INSERT INTO goals_wallet (balance) VALUES (0)');
+      console.log('Initialized Goals Wallet');
+    }
+
   } catch (error) {
     console.error('Failed to initialize database:', error);
   }

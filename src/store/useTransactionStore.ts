@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { db } from '../db/client';
 import { transactions, Transaction, NewTransaction, accounts } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { useGoalStore } from './useGoalStore';
 
 interface TransactionState {
   transactions: Transaction[];
@@ -46,6 +47,12 @@ export const useTransactionStore = create<TransactionState>((set) => ({
           await tx.update(accounts)
             .set({ balance: newBalance })
             .where(eq(accounts.id, newTransaction.accountId));
+        }
+
+        // 3. If "Goal Fund" expense, add to Goals Wallet
+        if (newTransaction.type === 'expense' && newTransaction.category === 'Goal Fund') {
+          const { addToWallet } = useGoalStore.getState();
+          await addToWallet(newTransaction.amount);
         }
       });
 
