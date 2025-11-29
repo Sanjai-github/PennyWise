@@ -49,17 +49,17 @@ module.exports = {
           'text-secondary': '#6B6B6B',
           border: '#E0E0E0',
         },
-        // Dark theme colors
+        // Dark theme colors (Glassmorphism)
         dark: {
-          bg: dark.base,
-          surface: dark.surface,
-          card: dark.card,
-          primary: dark.violet,
-          secondary: dark.violetDim,
-          accent: dark.accent,
-          text: '#E8E8E8',
-          'text-secondary': '#A0A0A0',
-          border: dark.border,
+          bg: '#0F0F1A', // Deep dark purple/blue
+          surface: 'rgba(255, 255, 255, 0.05)', // Glass effect
+          card: 'rgba(255, 255, 255, 0.08)', // Glass card
+          primary: '#8B5CF6', // Violet
+          secondary: '#EC4899', // Pink/Magenta
+          accent: '#10B981', // Emerald
+          text: '#FFFFFF',
+          'text-secondary': 'rgba(255, 255, 255, 0.6)',
+          border: 'rgba(255, 255, 255, 0.1)',
         },
         // Shared semantic colors
         success: shared.success,

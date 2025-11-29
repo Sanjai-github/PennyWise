@@ -92,6 +92,30 @@ export const initDatabase = () => {
     } catch (e) {
       console.log('Profile image column check failed or already exists');
     }
+
+    // Migration for created_at column in accounts table
+    try {
+      const result = db.getAllSync('SELECT count(*) as count FROM pragma_table_info("accounts") WHERE name="created_at"');
+      // @ts-ignore
+      if (result[0].count === 0) {
+        db.runSync('ALTER TABLE accounts ADD COLUMN created_at INTEGER DEFAULT (unixepoch()) NOT NULL');
+        console.log('Added created_at column to accounts table');
+      }
+    } catch (e) {
+      console.log('Created_at column check failed or already exists');
+    }
+
+    // Migration for is_custom column in categories table
+    try {
+      const result = db.getAllSync('SELECT count(*) as count FROM pragma_table_info("categories") WHERE name="is_custom"');
+      // @ts-ignore
+      if (result[0].count === 0) {
+        db.runSync('ALTER TABLE categories ADD COLUMN is_custom INTEGER DEFAULT 0 NOT NULL');
+        console.log('Added is_custom column to categories table');
+      }
+    } catch (e) {
+      console.log('is_custom column check failed or already exists');
+    }
   } catch (error) {
     console.error('Failed to initialize database:', error);
   }

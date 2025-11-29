@@ -41,13 +41,35 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ visible, onClose, initial
       Alert.alert('Error', 'Please select a category');
       return;
     }
-    if (accounts.length === 0) {
-      Alert.alert('Error', 'No accounts found. Please add an account first.');
-      return;
-    }
+    let accountId = accounts.length > 0 ? accounts[0].id : -1;
 
-    // Default to first account for now
-    const accountId = accounts[0].id;
+    if (accounts.length === 0) {
+      // Auto-create default account
+      const { currency } = require('../store/useSettingsStore').useSettingsStore.getState();
+      const { addAccount } = useAccountStore.getState();
+      
+      try {
+        await addAccount({
+          name: 'Cash',
+          type: 'cash',
+          balance: 0,
+          currency: currency,
+        });
+        
+        // Refresh accounts list to get the new ID
+        await useAccountStore.getState().loadAccounts();
+        const updatedAccounts = useAccountStore.getState().accounts;
+        if (updatedAccounts.length > 0) {
+          accountId = updatedAccounts[0].id;
+        } else {
+          Alert.alert('Error', 'Failed to create default account');
+          return;
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Failed to create default account');
+        return;
+      }
+    }
 
     try {
       await addTransaction({

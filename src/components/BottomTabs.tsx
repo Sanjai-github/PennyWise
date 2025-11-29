@@ -1,14 +1,16 @@
 import React from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
-import { Home, PieChart, Settings, Clock, Wallet } from 'lucide-react-native';
+import { Home, PieChart, Clock, Wallet, Plus } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 
 interface BottomTabsProps {
-  currentTab: 'home' | 'history' | 'analytics' | 'budget' | 'settings';
-  onTabChange: (tab: 'home' | 'history' | 'analytics' | 'budget' | 'settings') => void;
+  currentTab: 'home' | 'history' | 'analytics' | 'budget';
+  onTabChange: (tab: 'home' | 'history' | 'analytics' | 'budget') => void;
+  onAddPress: () => void;
 }
 
-const BottomTabs: React.FC<BottomTabsProps> = ({ currentTab, onTabChange }) => {
+const BottomTabs: React.FC<BottomTabsProps> = ({ currentTab, onTabChange, onAddPress }) => {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -17,40 +19,101 @@ const BottomTabs: React.FC<BottomTabsProps> = ({ currentTab, onTabChange }) => {
     { id: 'history', icon: Clock, label: 'History' },
     { id: 'analytics', icon: PieChart, label: 'Analytics' },
     { id: 'budget', icon: Wallet, label: 'Budget' },
-    { id: 'settings', icon: Settings, label: 'Settings' },
   ] as const;
 
   return (
-    <View className="absolute bottom-0 left-0 right-0 bg-light-surface dark:bg-dark-surface border-t border-light-border dark:border-dark-border pb-8 pt-2 px-4 flex-row justify-between items-center">
-      {tabs.map((tab) => {
-        const isActive = currentTab === tab.id;
-        const Icon = tab.icon;
-        
-        return (
-          <TouchableOpacity
-            key={tab.id}
-            onPress={() => onTabChange(tab.id)}
-            className="items-center justify-center p-2 flex-1"
-          >
-            <Icon 
-              size={24} 
-              color={isActive 
-                ? (isDark ? '#818CF8' : '#4F46E5') 
-                : (isDark ? '#6B7280' : '#9CA3AF')
-              } 
-            />
-            <Text 
-              className={`text-[10px] mt-1 font-medium ${
-                isActive 
-                  ? 'text-light-primary dark:text-dark-primary' 
-                  : 'text-light-text-secondary dark:text-dark-text-secondary'
-              }`}
+    <View className="absolute bottom-0 left-0 right-0 bg-light-surface dark:bg-dark-surface border-t border-light-border dark:border-dark-border pb-8 pt-2 px-4">
+      <View className="flex-row justify-between items-center">
+        {/* First two tabs */}
+        {tabs.slice(0, 2).map((tab) => {
+          const isActive = currentTab === tab.id;
+          const Icon = tab.icon;
+          
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              onPress={() => onTabChange(tab.id)}
+              className="items-center justify-center p-2 flex-1"
             >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+              <Icon 
+                size={24} 
+                color={isActive 
+                  ? (isDark ? '#818CF8' : '#4F46E5') 
+                  : (isDark ? '#6B7280' : '#9CA3AF')
+                } 
+              />
+              <Text 
+                className={`text-[10px] mt-1 font-medium ${
+                  isActive 
+                    ? 'text-light-primary dark:text-dark-primary' 
+                    : 'text-light-text-secondary dark:text-dark-text-secondary'
+                }`}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+
+        {/* Center FAB */}
+        <TouchableOpacity
+          onPress={onAddPress}
+          className="items-center justify-center -mt-8"
+          style={{ width: 64 }}
+        >
+          <LinearGradient
+            colors={['#8B5CF6', '#C084FC']}
+            style={{ 
+              width: 56, 
+              height: 56, 
+              borderRadius: 28, 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              shadowColor: '#8B5CF6',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <Plus size={28} color="#FFF" />
+          </LinearGradient>
+          <Text className="text-[10px] mt-1 font-medium text-light-primary dark:text-dark-primary">
+            Add
+          </Text>
+        </TouchableOpacity>
+
+        {/* Last two tabs */}
+        {tabs.slice(2, 4).map((tab) => {
+          const isActive = currentTab === tab.id;
+          const Icon = tab.icon;
+          
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              onPress={() => onTabChange(tab.id)}
+              className="items-center justify-center p-2 flex-1"
+            >
+              <Icon 
+                size={24} 
+                color={isActive 
+                  ? (isDark ? '#818CF8' : '#4F46E5') 
+                  : (isDark ? '#6B7280' : '#9CA3AF')
+                } 
+              />
+              <Text 
+                className={`text-[10px] mt-1 font-medium ${
+                  isActive 
+                    ? 'text-light-primary dark:text-dark-primary' 
+                    : 'text-light-text-secondary dark:text-dark-text-secondary'
+                }`}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 };

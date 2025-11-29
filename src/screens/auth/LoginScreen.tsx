@@ -114,9 +114,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSignUp, onNavigat
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       className="flex-1 bg-light-bg dark:bg-dark-bg"
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
         <View className="flex-1 p-6 justify-center">
           {/* Header Animation */}
           <View className="items-center mb-8">

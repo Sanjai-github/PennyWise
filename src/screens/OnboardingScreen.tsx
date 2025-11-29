@@ -4,6 +4,7 @@ import LottieView from 'lottie-react-native';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { useBudgetStore } from '../store/useBudgetStore';
+import { useAccountStore } from '../store/useAccountStore';
 import { ArrowRight, Check, DollarSign, Camera, User } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { Button } from '../components';
@@ -65,8 +66,25 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish }) => {
   const handleFinish = async () => {
     if (budgetAmount) {
       const amount = parseFloat(budgetAmount);
-      // Logic for budget...
+      // For now, we set a general budget. In a real app, this might be per category.
+      // Since the schema requires a category, we'll use 'General' or 'Monthly'.
+      await setBudget({
+        category: 'Monthly',
+        amount,
+      });
     }
+
+    // Create default account if none exists
+    const { accounts, addAccount } = useAccountStore.getState();
+    if (accounts.length === 0) {
+      await addAccount({
+        name: 'Cash',
+        type: 'cash',
+        balance: 0,
+        currency: currency,
+      });
+    }
+
     completeOnboarding();
     onFinish();
   };

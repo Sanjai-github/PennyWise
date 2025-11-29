@@ -2,10 +2,13 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Transaction } from '../db/schema';
 import { ShoppingBag, Coffee, Home, Car, DollarSign, ArrowUpRight, ArrowDownLeft } from 'lucide-react-native';
+import { useSettingsStore } from '../store/useSettingsStore';
+import { useColorScheme } from 'nativewind';
 
 interface TransactionItemProps {
   transaction: Transaction;
-  onLongPress?: () => void;
+  onLongPress?: (transaction: Transaction) => void;
+  onPress?: () => void;
 }
 
 const getCategoryIcon = (category: string, color: string) => {
@@ -19,47 +22,50 @@ const getCategoryIcon = (category: string, color: string) => {
   }
 };
 
-import { useSettingsStore } from '../store/useSettingsStore';
-
-// ...
-
-const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onLongPress }) => {
+const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, onLongPress, onPress }) => {
   const { currencySymbol } = useSettingsStore();
-  const isExpense = transaction.type === 'expense';
-  const amountColor = isExpense ? 'text-error' : 'text-success';
-  const iconColor = isExpense ? '#F44336' : '#4CAF50';
-  const iconBg = isExpense ? 'bg-red-100 dark:bg-red-900/20' : 'bg-green-100 dark:bg-green-900/20';
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  
+  const isIncome = transaction.type === 'income';
+  const categoryColor = isIncome ? '#10B981' : '#F43F5E';
 
-  const Container = onLongPress ? TouchableOpacity : View;
+  // For glassmorphism, we want transparent backgrounds in dark mode
+  // and solid backgrounds in light mode
+  const IconComponent = isIncome ? ArrowUpRight : ArrowDownLeft;
 
   return (
-    <Container 
-      onLongPress={onLongPress}
+    <TouchableOpacity
+      onPress={onPress}
+      onLongPress={() => onLongPress && onLongPress(transaction)}
       activeOpacity={0.7}
-      className="flex-row items-center justify-between py-3 border-b border-light-border dark:border-dark-border last:border-0"
+      className="flex-row items-center justify-between p-4 border-b border-light-border dark:border-white/5 last:border-0"
     >
       <View className="flex-row items-center gap-3">
-        <View className={`w-10 h-10 rounded-full items-center justify-center ${iconBg}`}>
-          {getCategoryIcon(transaction.category, iconColor)}
+        <View 
+          className="w-10 h-10 rounded-full items-center justify-center"
+          style={{ backgroundColor: isDark ? `${categoryColor}20` : `${categoryColor}20` }}
+        >
+          {getCategoryIcon(transaction.category, categoryColor)}
         </View>
         <View>
-          <Text className="text-light-text dark:text-dark-text font-medium text-base">
+          <Text className="text-light-text dark:text-white font-medium text-base">
             {transaction.category}
           </Text>
-          <Text className="text-light-text-secondary dark:text-dark-text-secondary text-xs">
-            {transaction.note || new Date(transaction.date).toLocaleDateString()}
+          <Text className="text-light-text-secondary dark:text-white/60 text-xs">
+            {new Date(transaction.date).toLocaleDateString()}
           </Text>
         </View>
       </View>
-      <View className="items-end">
-        <Text className={`font-bold text-base ${amountColor}`}>
-          {isExpense ? '-' : '+'}{currencySymbol}{transaction.amount.toFixed(2)}
-        </Text>
-        <Text className="text-light-text-secondary dark:text-dark-text-secondary text-xs">
-          {new Date(transaction.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </View>
-    </Container>
+
+      <Text 
+        className={`font-bold text-base ${
+          isIncome ? 'text-green-600 dark:text-emerald-400' : 'text-red-600 dark:text-rose-400'
+        }`}
+      >
+        {isIncome ? '+' : '-'}{currencySymbol}{transaction.amount.toFixed(2)}
+      </Text>
+    </TouchableOpacity>
   );
 };
 
