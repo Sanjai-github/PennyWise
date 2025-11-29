@@ -81,6 +81,65 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ visible, onClose, initial
         note,
         createdAt: new Date(),
       });
+
+      // Check for budget and show alert
+      if (type === 'expense') {
+        const { budgets } = require('../store/useBudgetStore').useBudgetStore.getState();
+        const { transactions } = useTransactionStore.getState();
+        const { showAlert } = require('../store/useBudgetAlertStore').useBudgetAlertStore.getState();
+
+        const budget = budgets.find((b: any) => b.category === category);
+        
+        if (budget) {
+          // Calculate spent BEFORE this transaction
+          const currentMonth = new Date().getMonth();
+          const currentYear = new Date().getFullYear();
+          
+          const spentBefore = transactions
+            .filter((t: any) => {
+              const tDate = new Date(t.date);
+              return t.type === 'expense' && 
+                     t.category === category && 
+                     tDate.getMonth() === currentMonth && 
+                     tDate.getFullYear() === currentYear &&
+                     t.id !== undefined; // Exclude the one just added if it's already in the list (it shouldn't be yet usually, but safe to check)
+            })
+            .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+          // The store updates optimistically or quickly, so we might need to subtract the current amount if it was already added to the store
+          // But here we are calling this right after addTransaction. 
+          // Let's assume addTransaction updates the store.
+          // Actually, let's calculate based on what we know.
+          
+          // We know the limit and the amount we just added.
+          // We need the spent amount *excluding* the current one to show "Remaining Before".
+          // But the requirement is "Current budget balance minus that current expense transaction".
+          // So: (Limit - SpentBefore) - CurrentAmount = NewRemaining.
+          
+          // Let's recalculate spent from the store, which should now include the new transaction
+          const updatedTransactions = useTransactionStore.getState().transactions;
+           const totalSpent = updatedTransactions
+            .filter((t: any) => {
+              const tDate = new Date(t.date);
+              return t.type === 'expense' && 
+                     t.category === category && 
+                     tDate.getMonth() === currentMonth && 
+                     tDate.getFullYear() === currentYear;
+            })
+            .reduce((sum: number, t: any) => sum + t.amount, 0);
+            
+          const spentBeforeThis = totalSpent - parseFloat(amount);
+          const remainingBefore = budget.amount - spentBeforeThis;
+
+          showAlert({
+            category,
+            remainingBefore,
+            transactionAmount: parseFloat(amount),
+            limit: budget.amount,
+          });
+        }
+      }
+
       // Refresh accounts to update balance
       useAccountStore.getState().loadAccounts();
       onClose();

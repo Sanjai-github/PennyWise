@@ -22,6 +22,7 @@ import QuickAddModal from './src/screens/QuickAddModal';
 import { useAccountStore } from './src/store/useAccountStore';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useSettingsStore } from './src/store/useSettingsStore';
+import BudgetAlert from './src/components/BudgetAlert';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -122,6 +123,7 @@ export default function App() {
           onClose={() => setIsQuickAddVisible(false)}
           initialType="expense"
         />
+        <BudgetAlert />
         <StatusBar style={isDark ? 'light' : 'dark'} translucent={false} />
       </View>
     </SafeAreaProvider>

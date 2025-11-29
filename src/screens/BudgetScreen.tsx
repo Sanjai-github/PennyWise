@@ -106,57 +106,61 @@ const BudgetScreen = () => {
               key={item.id}
               onPress={() => handleSetBudget(item.name, item.limit)}
               activeOpacity={0.7}
-              className="bg-light-surface dark:bg-dark-surface p-4 rounded-2xl mb-4 border border-light-border dark:border-dark-border"
+              className="bg-light-surface dark:bg-dark-surface p-5 rounded-3xl mb-4 border border-light-border dark:border-dark-border shadow-sm"
             >
-              <View className="flex-row items-center justify-between mb-3">
+              <View className="flex-row items-center justify-between mb-4">
                 <View className="flex-row items-center gap-3">
                   <View 
-                    className="w-10 h-10 rounded-full items-center justify-center"
+                    className="w-12 h-12 rounded-full items-center justify-center"
                     style={{ backgroundColor: item.color + '20' }}
                   >
-                    <Icon size={20} color={item.color} />
+                    <Icon size={24} color={item.color} />
                   </View>
-                  <View>
-                    <Text className="text-light-text dark:text-dark-text font-bold text-base">
-                      {item.name}
-                    </Text>
-                    {item.hasBudget ? (
-                      <Text className="text-light-text-secondary dark:text-dark-text-secondary text-xs">
-                        {currencySymbol}{item.spent.toFixed(0)} of {currencySymbol}{item.limit.toFixed(0)}
-                      </Text>
-                    ) : (
-                      <Text className="text-light-text-secondary dark:text-dark-text-secondary text-xs italic">
-                        No limit set
-                      </Text>
-                    )}
-                  </View>
+                  <Text className="text-light-text dark:text-dark-text font-bold text-lg">
+                    {item.name}
+                  </Text>
                 </View>
                 
                 {item.hasBudget && item.progress >= 1 && (
-                  <View className="flex-row items-center gap-1 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-lg">
-                    <AlertCircle size={12} color="#F44336" />
-                    <Text className="text-red-600 dark:text-red-400 text-xs font-bold">Over</Text>
+                  <View className="flex-row items-center gap-1 bg-red-100 dark:bg-red-900/30 px-3 py-1.5 rounded-full">
+                    <AlertCircle size={14} color="#F44336" />
+                    <Text className="text-red-600 dark:text-red-400 text-xs font-bold">Over Budget</Text>
                   </View>
                 )}
               </View>
 
               {item.hasBudget ? (
                 <View>
-                  <ProgressBar progress={item.progress} color={item.statusColor} height={8} />
-                  <View className="flex-row justify-between mt-1">
-                    <Text className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-                      {(item.progress * 100).toFixed(0)}%
+                  <View className="flex-row items-baseline gap-1.5 mb-4">
+                    <Text className="text-light-text dark:text-dark-text text-3xl font-bold" style={{ fontFamily: 'Outfit_700Bold' }}>
+                      {currencySymbol}{item.spent.toFixed(0)}
                     </Text>
-                    <Text className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-                      {currencySymbol}{(item.limit - item.spent).toFixed(0)} left
+                    <Text className="text-light-text-secondary dark:text-dark-text-secondary text-xl font-medium">
+                      / {currencySymbol}{item.limit.toFixed(0)}
+                    </Text>
+                  </View>
+
+                  <ProgressBar progress={item.progress} color={item.statusColor} height={12} />
+                  
+                  <View className="flex-row justify-between mt-3">
+                    <Text className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary">
+                      {item.limit - item.spent >= 0 
+                        ? `${currencySymbol}${(item.limit - item.spent).toFixed(0)} remaining`
+                        : `${currencySymbol}${Math.abs(item.limit - item.spent).toFixed(0)} over`
+                      }
+                    </Text>
+                    <Text className="text-sm font-bold" style={{ color: item.statusColor }}>
+                      {(item.progress * 100).toFixed(0)}%
                     </Text>
                   </View>
                 </View>
               ) : (
-                <View className="flex-row items-center gap-2 opacity-50">
-                  <Plus size={16} color={isDark ? '#A0A0A0' : '#6B6B6B'} />
-                  <Text className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                    Tap to set budget
+                <View className="flex-row items-center gap-3 opacity-50 py-2">
+                  <View className="w-8 h-8 rounded-full bg-light-bg dark:bg-dark-bg items-center justify-center">
+                    <Plus size={20} color={isDark ? '#A0A0A0' : '#6B6B6B'} />
+                  </View>
+                  <Text className="text-light-text-secondary dark:text-dark-text-secondary text-base font-medium">
+                    Tap to set a monthly limit
                   </Text>
                 </View>
               )}
