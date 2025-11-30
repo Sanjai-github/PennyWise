@@ -5,6 +5,7 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import { useBudgetStore } from '../store/useBudgetStore';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface SetBudgetModalProps {
   visible: boolean;
@@ -19,6 +20,7 @@ const SetBudgetModal: React.FC<SetBudgetModalProps> = ({ visible, onClose, categ
   const [rolloverEnabled, setRolloverEnabled] = useState(false);
   const { setBudget, isLoading } = useBudgetStore();
   const { currencySymbol } = useSettingsStore();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     if (visible && currentLimit) {
@@ -36,6 +38,10 @@ const SetBudgetModal: React.FC<SetBudgetModalProps> = ({ visible, onClose, categ
       return;
     }
     if (!category) return;
+    if (!user) {
+      Alert.alert('Error', 'User not authenticated');
+      return;
+    }
 
     try {
       await setBudget({
@@ -43,6 +49,7 @@ const SetBudgetModal: React.FC<SetBudgetModalProps> = ({ visible, onClose, categ
         amount: parseFloat(amount),
         rolloverEnabled,
         createdAt: new Date(),
+        userId: user.id,
       });
       onClose();
     } catch (error) {
