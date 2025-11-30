@@ -8,9 +8,12 @@ import { Search, Filter, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { Transaction } from '../db/schema';
 
+import { useAuthStore } from '../store/useAuthStore';
+
 const HistoryScreen = () => {
   const { transactions, deleteTransaction } = useTransactionStore();
   const { colorScheme } = useColorScheme();
+  const { user } = useAuthStore();
   const isDark = colorScheme === 'dark';
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,7 +100,9 @@ const HistoryScreen = () => {
                   style: 'destructive',
                   onPress: async () => {
                     await deleteTransaction(transaction.id);
-                    useAccountStore.getState().loadAccounts();
+                    if (user) {
+                      useAccountStore.getState().loadAccounts(user.id);
+                    }
                   },
                 },
               ]

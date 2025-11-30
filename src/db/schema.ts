@@ -2,6 +2,7 @@ import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 export const accounts = sqliteTable('accounts', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id).notNull(),
   name: text('name').notNull(),
   type: text('type', { enum: ['cash', 'bank', 'card', 'wallet'] }).notNull(),
   balance: real('balance').notNull().default(0),
@@ -11,6 +12,7 @@ export const accounts = sqliteTable('accounts', {
 
 export const transactions = sqliteTable('transactions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id).notNull(),
   accountId: integer('account_id').references(() => accounts.id).notNull(),
   amount: real('amount').notNull(),
   date: integer('date', { mode: 'timestamp' }).notNull(),
@@ -31,6 +33,7 @@ export const users = sqliteTable('users', {
 
 export const categories = sqliteTable('categories', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id), // Nullable for default categories
   name: text('name').notNull(),
   type: text('type', { enum: ['income', 'expense'] }).notNull(),
   icon: text('icon').notNull(), // Lucide icon name
@@ -40,6 +43,7 @@ export const categories = sqliteTable('categories', {
 
 export const budgets = sqliteTable('budgets', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id).notNull(),
   category: text('category').notNull(), // references category name
   amount: real('amount').notNull(),
   rolloverEnabled: integer('rollover_enabled', { mode: 'boolean' }).notNull().default(false),
@@ -48,6 +52,7 @@ export const budgets = sqliteTable('budgets', {
 
 export const goals = sqliteTable('goals', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id).notNull(),
   name: text('name').notNull(),
   targetAmount: real('target_amount').notNull(),
   currentAmount: real('current_amount').notNull().default(0),
@@ -59,6 +64,7 @@ export const goals = sqliteTable('goals', {
 
 export const goalsWallet = sqliteTable('goals_wallet', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id).notNull(),
   balance: real('balance').notNull().default(0),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(new Date()),
 });

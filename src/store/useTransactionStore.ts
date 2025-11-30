@@ -8,7 +8,7 @@ interface TransactionState {
   transactions: Transaction[];
   isLoading: boolean;
   error: string | null;
-  loadTransactions: () => Promise<void>;
+  loadTransactions: (userId?: number) => Promise<void>;
   addTransaction: (transaction: NewTransaction) => Promise<void>;
   deleteTransaction: (id: number) => Promise<void>;
   updateTransaction: (id: number, data: Partial<NewTransaction>) => Promise<void>;
@@ -19,10 +19,16 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   isLoading: false,
   error: null,
 
-  loadTransactions: async () => {
+  loadTransactions: async (userId?: number) => {
+    if (!userId) {
+      set({ transactions: [] });
+      return;
+    }
     set({ isLoading: true, error: null });
     try {
-      const allTransactions = await db.select().from(transactions).orderBy(desc(transactions.date));
+      const allTransactions = await db.select().from(transactions)
+        .where(eq(transactions.userId, userId))
+        .orderBy(desc(transactions.date));
       set({ transactions: allTransactions, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to load transactions', isLoading: false });
@@ -52,11 +58,14 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         // 3. If "Goal Fund" expense, add to Goals Wallet
         if (newTransaction.type === 'expense' && newTransaction.category === 'Goal Fund') {
           const { addToWallet } = useGoalStore.getState();
-          await addToWallet(newTransaction.amount);
+          await addToWallet(newTransaction.amount, newTransaction.userId);
         }
       });
 
-      const allTransactions = await db.select().from(transactions).orderBy(desc(transactions.date));
+      // Reload transactions for the user
+      const allTransactions = await db.select().from(transactions)
+        .where(eq(transactions.userId, newTransaction.userId))
+        .orderBy(desc(transactions.date));
       set({ transactions: allTransactions, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to add transaction', isLoading: false });
@@ -67,10 +76,12 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   deleteTransaction: async (id) => {
     set({ isLoading: true, error: null });
     try {
+      let userId: number | undefined;
       await db.transaction(async (tx) => {
         // 1. Get transaction details before deleting
         const transaction = await tx.select().from(transactions).where(eq(transactions.id, id)).get();
         if (!transaction) return;
+        userId = transaction.userId;
 
         // 2. Revert Account Balance
         const account = await tx.select().from(accounts).where(eq(accounts.id, transaction.accountId)).get();
@@ -88,8 +99,12 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         await tx.delete(transactions).where(eq(transactions.id, id));
       });
 
-      const allTransactions = await db.select().from(transactions).orderBy(desc(transactions.date));
-      set({ transactions: allTransactions, isLoading: false });
+      if (userId) {
+        const allTransactions = await db.select().from(transactions)
+          .where(eq(transactions.userId, userId))
+          .orderBy(desc(transactions.date));
+        set({ transactions: allTransactions, isLoading: false });
+      }
     } catch (error) {
       set({ error: 'Failed to delete transaction', isLoading: false });
       console.error(error);
@@ -99,10 +114,12 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   updateTransaction: async (id: number, data: Partial<NewTransaction>) => {
     set({ isLoading: true, error: null });
     try {
+      let userId: number | undefined;
       await db.transaction(async (tx) => {
         // 1. Get old transaction
         const oldTransaction = await tx.select().from(transactions).where(eq(transactions.id, id)).get();
         if (!oldTransaction) return;
+        userId = oldTransaction.userId;
 
         // 2. Revert old balance effect
         const account = await tx.select().from(accounts).where(eq(accounts.id, oldTransaction.accountId)).get();
@@ -131,8 +148,12 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         await tx.update(transactions).set(data).where(eq(transactions.id, id));
       });
 
-      const allTransactions = await db.select().from(transactions).orderBy(desc(transactions.date));
-      set({ transactions: allTransactions, isLoading: false });
+      if (userId) {
+        const allTransactions = await db.select().from(transactions)
+          .where(eq(transactions.userId, userId))
+          .orderBy(desc(transactions.date));
+        set({ transactions: allTransactions, isLoading: false });
+      }
     } catch (error) {
       set({ error: 'Failed to update transaction', isLoading: false });
       console.error(error);

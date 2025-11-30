@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import * as Icons from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useCategoryStore } from '../store/useCategoryStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface CategorySelectorProps {
   type: 'income' | 'expense';
@@ -18,10 +19,13 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { categories, loadCategories } = useCategoryStore();
+  const { user } = useAuthStore();
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (user) {
+      loadCategories(user.id);
+    }
+  }, [user]);
 
   const filteredCategories = categories.filter(c => c.type === type);
 

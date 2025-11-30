@@ -6,6 +6,8 @@ import { useColorScheme } from 'nativewind';
 import * as Icons from 'lucide-react-native';
 import AddCategoryModal from './AddCategoryModal';
 
+import { useAuthStore } from '../store/useAuthStore';
+
 interface ManageCategoriesScreenProps {
   onBack: () => void;
 }
@@ -13,12 +15,15 @@ interface ManageCategoriesScreenProps {
 const ManageCategoriesScreen: React.FC<ManageCategoriesScreenProps> = ({ onBack }) => {
   const { categories, loadCategories, deleteCategory } = useCategoryStore();
   const { colorScheme } = useColorScheme();
+  const { user } = useAuthStore();
   const isDark = colorScheme === 'dark';
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (user) {
+      loadCategories(user.id);
+    }
+  }, [user]);
 
   const handleDelete = (id: number, name: string) => {
     Alert.alert(

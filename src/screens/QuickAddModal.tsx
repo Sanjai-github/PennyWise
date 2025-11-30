@@ -7,6 +7,8 @@ import CategorySelector from '../components/CategorySelector';
 import { useTransactionStore } from '../store/useTransactionStore';
 import { useAccountStore } from '../store/useAccountStore';
 
+import { useAuthStore } from '../store/useAuthStore';
+
 interface QuickAddModalProps {
   visible: boolean;
   onClose: () => void;
@@ -21,6 +23,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ visible, onClose, initial
   
   const { addTransaction, isLoading } = useTransactionStore();
   const { accounts } = useAccountStore();
+  const { user } = useAuthStore();
 
   // Reset form when modal opens
   useEffect(() => {
@@ -33,6 +36,8 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ visible, onClose, initial
   }, [visible, initialType]);
 
   const handleSave = async () => {
+    if (!user) return; // Should not happen if protected
+
     if (!amount || isNaN(parseFloat(amount))) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
@@ -50,6 +55,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ visible, onClose, initial
       
       try {
         await addAccount({
+          userId: user.id,
           name: 'Cash',
           type: 'cash',
           balance: 0,
@@ -57,7 +63,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ visible, onClose, initial
         });
         
         // Refresh accounts list to get the new ID
-        await useAccountStore.getState().loadAccounts();
+        await useAccountStore.getState().loadAccounts(user.id);
         const updatedAccounts = useAccountStore.getState().accounts;
         if (updatedAccounts.length > 0) {
           accountId = updatedAccounts[0].id;
@@ -73,6 +79,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ visible, onClose, initial
 
     try {
       await addTransaction({
+        userId: user.id,
         accountId,
         amount: parseFloat(amount),
         date: new Date(),
@@ -141,7 +148,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ visible, onClose, initial
       }
 
       // Refresh accounts to update balance
-      useAccountStore.getState().loadAccounts();
+      useAccountStore.getState().loadAccounts(user.id);
       onClose();
     } catch (error) {
       Alert.alert('Error', 'Failed to save transaction');

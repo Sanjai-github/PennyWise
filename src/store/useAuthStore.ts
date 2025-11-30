@@ -3,7 +3,7 @@ import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/client';
-import { users, transactions, budgets, accounts, categories } from '../db/schema';
+import { users, transactions, budgets, accounts, categories, goals, goalsWallet } from '../db/schema';
 
 interface User {
   id: number;
@@ -238,19 +238,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (!user) return;
 
       // 1. Delete all user data
-      // Note: In a real app with multiple users, we'd filter by user_id.
-      // Since this is a local-first single-user-per-device model (mostly), 
-      // we are wiping everything for safety as requested.
-      // However, to be precise, we should probably only delete data if we had user association.
-      // Given the schema doesn't strictly enforce user_id on everything yet (it's a local app),
-      // we will wipe the tables.
-      
-      await db.delete(transactions);
-      await db.delete(budgets);
-      await db.delete(accounts);
-      // We keep default categories, but maybe delete custom ones? 
-      // Let's just keep categories for now or delete custom ones if we tracked them by user.
-      // The requirement said "Delete account", implying full wipe.
+      await db.delete(transactions).where(eq(transactions.userId, user.id));
+      await db.delete(budgets).where(eq(budgets.userId, user.id));
+      await db.delete(accounts).where(eq(accounts.userId, user.id));
+      await db.delete(goals).where(eq(goals.userId, user.id));
+      await db.delete(goalsWallet).where(eq(goalsWallet.userId, user.id));
+      // Delete custom categories for this user
+      await db.delete(categories).where(eq(categories.userId, user.id));
       
       // 2. Delete User
       await db.delete(users).where(eq(users.id, user.id));

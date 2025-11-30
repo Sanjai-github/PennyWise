@@ -5,6 +5,7 @@ import { useBudgetStore } from '../store/useBudgetStore';
 import { useCategoryStore } from '../store/useCategoryStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useGoalStore } from '../store/useGoalStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { useAccountStore } from '../store/useAccountStore';
 import ProgressBar from '../components/ProgressBar';
 import SetBudgetModal from './SetBudgetModal';
@@ -19,26 +20,22 @@ const BudgetScreen = () => {
   const { categories, loadCategories } = useCategoryStore();
   const { currencySymbol } = useSettingsStore();
   const { colorScheme } = useColorScheme();
+  const { user } = useAuthStore();
   const isDark = colorScheme === 'dark';
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [potentialSavings, setPotentialSavings] = useState(0);
-  const [showRolloverBanner, setShowRolloverBanner] = useState(false);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user]);
 
   const loadData = async () => {
-    await Promise.all([loadBudgets(), loadCategories()]);
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
+    if (user) {
+      await Promise.all([loadBudgets(user.id), loadCategories(user.id)]);
+    }
   };
 
   const budgetData = useMemo(() => {
@@ -122,17 +119,30 @@ const BudgetScreen = () => {
       const processed = await AsyncStorage.getItem(key);
       
       if (!processed) {
-        setShowRolloverBanner(true);
+        Alert.alert(
+          'Budget Rollover',
+          `You have ${currencySymbol}${potentialSavings.toFixed(2)} unused from last month. Would you like to move it to your Goals Wallet?`,
+          [
+            {
+              text: 'No, thanks',
+              style: 'cancel',
+              onPress: async () => {
+                await AsyncStorage.setItem(key, 'skipped');
+              }
+            },
+            {
+              text: 'Yes, move it',
+              onPress: handleClaimSavings
+            }
+          ]
+        );
       }
     }
   };
 
   const handleClaimSavings = async () => {
     try {
-      // 1. Add to Wallet
-      await useGoalStore.getState().addToWallet(potentialSavings);
-      
-      // 2. Create Expense Transaction
+      // 1. Create Expense Transaction (Store handles wallet funding)
       const { addTransaction } = useTransactionStore.getState();
       // We need to find a default account to deduct from, or ask user. 
       // For simplicity in this flow, we'll use the first available account or a specific logic.
@@ -142,7 +152,7 @@ const BudgetScreen = () => {
       const accounts = useAccountStore.getState().accounts;
       const defaultAccount = accounts[0]; // Fallback to first account
 
-      if (defaultAccount) {
+      if (defaultAccount && user) {
         await addTransaction({
           accountId: defaultAccount.id,
           amount: potentialSavings,
@@ -151,10 +161,11 @@ const BudgetScreen = () => {
           category: 'Goal Fund',
           note: `Budget Rollover - ${new Date().toLocaleString('default', { month: 'long' })}`,
           createdAt: new Date(),
+          userId: user.id,
         });
       }
 
-      // 3. Mark as processed
+      // 2. Mark as processed
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
@@ -163,7 +174,6 @@ const BudgetScreen = () => {
       const key = `rollover_processed_${previousMonthYear}_${previousMonth}`;
       await AsyncStorage.setItem(key, 'true');
       
-      setShowRolloverBanner(false);
       Alert.alert('Success', `Transferred ${currencySymbol}${potentialSavings.toFixed(2)} to Goals Wallet!`);
     } catch (error) {
       Alert.alert('Error', 'Failed to transfer savings');
@@ -175,31 +185,33 @@ const BudgetScreen = () => {
     setIsModalVisible(true);
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  const totalAllocated = budgetData.reduce((sum, item) => sum + (item.limit || 0), 0);
+  const totalUsed = budgetData.reduce((sum, item) => sum + (item.spent || 0), 0);
+
   return (
     <View className="flex-1 bg-light-bg dark:bg-dark-bg pt-16 px-6">
-      <Text className="text-light-text dark:text-dark-text text-2xl font-bold mb-2" style={{ fontFamily: 'Outfit_700Bold' }}>
-        Monthly Budget
-      </Text>
+      <View className="flex-row items-center justify-between mb-2">
+        <Text className="text-light-text dark:text-dark-text text-2xl font-bold" style={{ fontFamily: 'Outfit_700Bold' }}>
+          Monthly Budget
+        </Text>
+        <View>
+          <Text className="text-light-text dark:text-dark-text font-bold text-lg text-right">
+            {currencySymbol}{totalUsed.toFixed(0)} <Text className="text-light-text-secondary dark:text-dark-text-secondary text-sm">/ {currencySymbol}{totalAllocated.toFixed(0)}</Text>
+          </Text>
+          <Text className="text-light-text-secondary dark:text-dark-text-secondary text-xs text-right">
+            Total Used
+          </Text>
+        </View>
+      </View>
       <Text className="text-light-text-secondary dark:text-dark-text-secondary text-sm mb-6">
         Track your spending limits for {new Date().toLocaleDateString('en-US', { month: 'long' })}.
       </Text>
-
-      {showRolloverBanner && (
-        <View className="bg-indigo-600 p-4 rounded-2xl mb-6 flex-row items-center justify-between shadow-lg shadow-indigo-200 dark:shadow-none">
-          <View className="flex-1">
-            <Text className="text-white font-bold text-lg">Savings Available!</Text>
-            <Text className="text-indigo-100 text-xs">
-              You saved {currencySymbol}{potentialSavings.toFixed(2)} last month.
-            </Text>
-          </View>
-          <TouchableOpacity 
-            onPress={handleClaimSavings}
-            className="bg-white px-4 py-2 rounded-xl"
-          >
-            <Text className="text-indigo-600 font-bold">Claim</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       <ScrollView 
         showsVerticalScrollIndicator={false}

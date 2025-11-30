@@ -31,20 +31,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToSettings, onNavigat
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const insets = useSafeAreaInsets();
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadAccounts();
-    loadTransactions();
-    loadCategories();
-    recalculateBalance();
-  }, []);
+    if (user) {
+      loadAccounts(user.id);
+      loadTransactions(user.id);
+      loadCategories(user.id);
+      recalculateBalance();
+    }
+  }, [user]);
 
-  const onRefresh = React.useCallback(() => {
-    loadAccounts();
-    loadTransactions();
-    loadCategories();
+  const onRefresh = React.useCallback(async () => {
+    if (!user) return;
+    setRefreshing(true);
+    await Promise.all([
+      loadAccounts(user.id),
+      loadTransactions(user.id),
+      loadCategories(user.id),
+    ]);
     recalculateBalance();
-  }, []);
+    setRefreshing(false);
+  }, [user]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();

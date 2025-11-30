@@ -7,24 +7,27 @@ import AddGoalModal from './AddGoalModal';
 import AllocateFundsModal from './AllocateFundsModal';
 import { Plus, Wallet, Target, ArrowRight } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import * as Icons from 'lucide-react-native';
+import { useAuthStore } from '../store/useAuthStore';
 
 const GoalsScreen = () => {
-  const { goals, walletBalance, loadGoals, loadWallet, allocateToGoal, deleteGoal } = useGoalStore();
+  const { goals, loadGoals, deleteGoal, walletBalance, loadWallet, allocateToGoal } = useGoalStore();
   const { currencySymbol } = useSettingsStore();
   const { colorScheme } = useColorScheme();
+  const { user } = useAuthStore();
   const isDark = colorScheme === 'dark';
 
-  const [selectedGoal, setSelectedGoal] = useState<{id: number, name: string} | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<{ id: number; name: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user]);
 
   const loadData = async () => {
-    await Promise.all([loadGoals(), loadWallet()]);
+    if (user) {
+      await Promise.all([loadGoals(user.id), loadWallet(user.id)]);
+    }
   };
 
   const onRefresh = async () => {
